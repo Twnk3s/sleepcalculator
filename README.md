@@ -2,8 +2,7 @@
 
 A simple, modern, single-page web application designed to help you track your sleep hours over a 7-day period and calculate your weekly sleep debt or surplus. Built entirely with plain HTML, CSS, and JavaScript, focusing on ease of use and a clean interface.
 
-![Screenshot Placeholder - A visual representation of the app showing sliders, chart, and results would go here]
-*(Imagine a screenshot of the app interface here)*
+![image](https://github.com/user-attachments/assets/3d59d3ef-32b5-4890-8192-aeabf6734a15)
 
 ---
 
