@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <!-- SEO: Viewport meta tag for responsive design -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- SEO: Page Title -->
+    <title>Sleep Debt Tracker - Calculate Your Weekly Sleep Needs</title>
+
+    <!-- SEO: Meta Description -->
+    <meta name="description" content="Track your daily sleep hours, set a goal, and calculate your weekly sleep debt or surplus with this simple, modern single-page web app. Features visual chart and dark mode.">
+
+    <!-- SEO: Keywords (Less impactful now, but can be included) -->
+    <meta name="keywords" content="sleep tracker, sleep debt calculator, sleep log, weekly sleep, sleep hours, health app, javascript app, sleep hygiene">
+
+    <!-- Security: Content Security Policy (CSP) - Example (Adjust if external resources were needed)
+         This basic policy restricts inline scripts/styles and loading resources only from the origin.
+         Since everything is inline *in this specific file*, a strict CSP is harder to implement without refactoring.
+         For a real-world app with separate files, a stronger CSP is recommended.
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';">
+    -->
+
+    <style>
+        /* Reset and Base Styles */
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --card-bg: #ffffff;
+            --border-color: #dee2e6;
+            --primary-color: #007bff;
+            --slider-track: #dee2e6;
+            --slider-thumb: #007bff;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --chart-bar-color: #6c757d;
+            --input-bg: #e9ecef;
+
+            --border-radius: 8px;
+            --padding: 15px;
+            --transition-speed: 0.3s;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --card-bg: #2c2c2c;
+            --border-color: #444;
+            --primary-color: #4dabf7;
+            --slider-track: #555;
+            --slider-thumb: #4dabf7;
+            --success-color: #40c057;
+            --error-color: #ff6b6b;
+            --chart-bar-color: #868e96;
+            --input-bg: #3a3a3a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+             /* Improve scroll behavior */
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align content to top */
+            min-height: 100vh;
+        }
+
+        /* Container */
+        .container {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+            position: relative; /* For theme toggle positioning */
+            border: 1px solid var(--border-color);
+        }
+         [data-theme="dark"] .container {
+             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+         }
+
+        /* Theme Toggle */
+        #theme-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            padding: 5px 8px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--text-color);
+            transition: background-color var(--transition-speed), color var(--transition-speed), border-color var(--transition-speed);
+            /* Accessibility */
+            line-height: 1; /* Ensure icon aligns well */
+        }
+         #theme-toggle:hover {
+            background-color: var(--input-bg);
+         }
+         #theme-toggle:focus-visible { /* Accessibility */
+             outline: 2px solid var(--primary-color);
+             outline-offset: 2px;
+         }
+
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 25px;
+            font-size: 1.8rem; /* Adjusted for balance */
+            margin-right: 40px; /* Ensure space for toggle button */
+        }
+
+        h2 {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+            color: var(--text-color);
+            transition: border-color var(--transition-speed), color var(--transition-speed);
+        }
+
+        /* Input Sections */
+        .input-group, .day-input {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            cursor: pointer; /* Associate label with input */
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap; /* Allow wrap on small screens */
+        }
+
+        input[type="range"], input[type="number"], .mood-selector {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease, color var(--transition-speed) ease;
+        }
+        /* Accessibility: Focus states */
+         input[type="range"]:focus-visible, input[type="number"]:focus-visible, .mood-selector:focus-visible {
+             outline: 2px solid var(--primary-color);
+             outline-offset: 1px;
+             border-color: var(--primary-color); /* Optional: highlight border too */
+         }
+
+
+        input[type="number"] {
+            width: 80px; /* Fixed width for number input */
+            text-align: center;
+            font-size: 1rem; /* Ensure readable size */
+            /* Prevent spinner arrows on number input if desired */
+            /* appearance: textfield;
+            -moz-appearance: textfield; */
+        }
+
+        input[type="range"] {
+            flex-grow: 1; /* Slider takes available space */
+            height: 8px;
+            cursor: pointer;
+            appearance: none; /* Override default look */
+            background: var(--slider-track);
+            outline: none;
+            border-radius: 5px;
+            transition: background var(--transition-speed);
+        }
+        /* Range Slider Thumb */
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--slider-thumb);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background var(--transition-speed);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: var(--slider-thumb);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none; /* Remove default border in Firefox */
+            transition: background var(--transition-speed);
+        }
+
+        .slider-value, .ideal-value {
+            font-weight: bold;
+            min-width: 60px; /* Ensure space for "12.0 hrs" */
+            text-align: right;
+            color: var(--primary-color);
+            transition: color var(--transition-speed);
+            font-feature-settings: "tnum"; /* Keep numbers aligned */
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Mood Selector (Optional) */
+        .mood-selector {
+            /* padding: 6px 8px; - Already set above */
+            cursor: pointer;
+            font-size: 1rem;
+            margin-left: auto; /* Push to the right */
+            appearance: none; /* Custom arrow styling needed if default is removed */
+            /* Basic custom arrow indicator */
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23${encodeURIComponent(getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim().substring(1))}%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: .65em auto;
+            padding-right: 30px; /* Make space for arrow */
+        }
+        /* Update arrow color on theme change - needs JS listener or more complex CSS */
+
+
+        @media (max-width: 480px) {
+            .mood-selector {
+                margin-left: 0; /* Stack below on small screens */
+                width: 100%; /* Full width */
+                margin-top: 10px;
+            }
+            .input-container {
+                 gap: 10px;
+            }
+            .slider-value {
+                min-width: 50px;
+            }
+        }
+
+        /* Results Section */
+        #results {
+            margin-top: 30px;
+            padding: var(--padding);
+            background-color: var(--input-bg);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            transition: background-color var(--transition-speed), border-color var(--transition-speed);
+        }
+
+        #results p {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            /* Prevent text selection if needed */
+            /* user-select: none; */
+        }
+        #results p:last-child {
+            margin-bottom: 0;
+        }
+
+        #sleep-difference {
+            font-weight: bold;
+            font-size: 1.3rem;
+            text-align: center;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            margin-top: 15px;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s; /* Faster transition for feedback */
+        }
+
+        #sleep-difference.positive {
+            background-color: rgba(40, 167, 69, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+         [data-theme="dark"] #sleep-difference.positive {
+             background-color: rgba(64, 192, 87, 0.25);
+         }
+
+        #sleep-difference.negative {
+            background-color: rgba(220, 53, 69, 0.15);
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+         [data-theme="dark"] #sleep-difference.negative {
+             background-color: rgba(255, 107, 107, 0.2);
+         }
+
+
+        #motivational-message {
+            text-align: center;
+            margin-top: 15px;
+            font-style: italic;
+            color: var(--text-color);
+            opacity: 0.9;
+            transition: color var(--transition-speed);
+        }
+
+        /* Chart Section */
+        #chart-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end; /* Align bars to bottom */
+            height: 150px; /* Fixed height for chart */
+            padding: 10px 0 0 0; /* Remove bottom padding, add top */
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: var(--input-bg);
+            position: relative;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed);
+            overflow: hidden; /* Prevent potential overflow issues */
+        }
+
+        .chart-bar-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1; /* Distribute space evenly */
+            text-align: center;
+            height: 100%; /* Ensure group fills container height */
+            justify-content: flex-end; /* Align bar/label to bottom */
+        }
+
+        .chart-bar {
+            width: 60%; /* Bar width relative to its group */
+            max-width: 35px;
+            background-color: var(--chart-bar-color);
+            border-radius: 4px 4px 0 0; /* Rounded top corners */
+            transition: height var(--transition-speed) ease-out, background-color var(--transition-speed);
+            position: relative; /* For value display inside */
+            margin-bottom: 5px; /* Space between bar and label */
+        }
+
+        .bar-value {
+            position: absolute;
+            top: -20px; /* Position above the bar */
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8em;
+            font-weight: bold;
+            color: var(--primary-color);
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.2s ease-in-out, color var(--transition-speed);
+            pointer-events: none; /* Prevent hover issues */
+            background: var(--card-bg); /* Add small bg for readability */
+            padding: 1px 4px;
+            border-radius: 3px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .chart-bar:hover .bar-value {
+            opacity: 1; /* Show on hover */
+        }
+
+
+        .bar-label {
+           /* margin-top: 5px; - Replaced by margin-bottom on bar */
+            padding-bottom: 5px; /* Ensure label isn't cut off */
+            font-size: 0.8em;
+            color: var(--text-color);
+            transition: color var(--transition-speed);
+        }
+
+        /* Sleep Tip Section */
+        #sleep-tip-section {
+            margin-top: 30px;
+            padding: var(--padding);
+            background-color: rgba(0, 123, 255, 0.05); /* Light blue tint */
+            border: 1px dashed var(--primary-color);
+            border-radius: var(--border-radius);
+            text-align: center;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed);
+        }
+        [data-theme="dark"] #sleep-tip-section {
+             background-color: rgba(77, 171, 247, 0.1);
+             border-color: var(--primary-color);
+        }
+
+        #sleep-tip-section h3 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            transition: color var(--transition-speed);
+        }
+
+        #sleep-tip {
+            font-size: 0.95rem;
+            font-style: italic;
+            color: var(--text-color); /* Inherit text color */
+            opacity: 0.9;
+            transition: color var(--transition-speed);
+        }
+
+         /* Responsive Adjustments */
+        @media (max-width: 640px) {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            h1 { font-size: 1.6rem; margin-bottom: 20px; margin-right: 35px;}
+            h2 { font-size: 1.2rem; margin-top: 25px; }
+            .input-group, .day-input { margin-bottom: 15px; }
+            #chart-container { height: 120px; }
+            .bar-label { font-size: 0.7em; }
+            #sleep-difference { font-size: 1.2rem; }
+            #results p { font-size: 1rem; }
+            .bar-value { font-size: 0.75em; top: -18px; }
+        }
+        @media (max-width: 380px) {
+            h1 { font-size: 1.4rem; }
+            .input-container { gap: 8px; }
+             input[type="number"] { width: 65px; }
+             .slider-value { min-width: 50px; }
+             .mood-selector { padding: 6px; font-size: 0.9rem; padding-right: 25px; background-size: 0.6em;}
+        }
+
+    </style>
+</head>
+<body>
+    <main class="container">
+        <button id="theme-toggle" title="Toggle Theme" aria-label="Toggle light and dark theme">🌓</button>
+        <h1>Sleep Debt Tracker</h1>
+
+        <!-- Ideal Sleep Goal -->
+        <section class="input-group" aria-labelledby="ideal-sleep-label">
+            <label id="ideal-sleep-label" for="ideal-sleep">🌙 Your Ideal Sleep Goal (hours per night):</label>
+            <div class="input-container">
+                <!-- Input validation: min/max/step handled by browser -->
+                <input type="number" id="ideal-sleep" name="ideal-sleep-goal" min="1" max="16" step="0.5" value="8" aria-describedby="ideal-value-display">
+                <span class="ideal-value" id="ideal-value-display" aria-live="polite">8.0 hrs</span>
+            </div>
+        </section>
+
+        <!-- Daily Sleep Inputs -->
+        <section aria-labelledby="daily-inputs-heading">
+            <h2 id="daily-inputs-heading">🛏️ Daily Sleep Input (Last 7 Days)</h2>
+            <div id="daily-inputs">
+                <!-- Inputs will be generated by JS -->
+                <!-- Structure per day:
+                <div class="day-input" role="group" aria-labelledby="label-day-id">
+                    <label id="label-day-id" for="sleep-day-id">DayName</label>
+                    <div class="input-container">
+                        <input type="range" id="sleep-day-id" ... aria-labelledby="label-day-id">
+                        <span class="slider-value" id="value-day-id" aria-live="polite">X.X hrs</span>
+                        <select class="mood-selector" id="mood-day-id" ... aria-label="Select mood for DayName">...</select>
+                    </div>
+                </div>
+                 -->
+            </div>
+        </section>
+
+        <!-- Chart -->
+        <section aria-labelledby="chart-heading">
+            <h2 id="chart-heading">📈 Weekly Sleep Chart</h2>
+            <div id="chart-container" role="img" aria-label="Bar chart showing hours slept each day of the week">
+                 <!-- Chart bars will be generated by JS -->
+                 <!-- Structure per day:
+                 <div class="chart-bar-group">
+                    <div class="chart-bar" id="bar-day-id" style="height: X%;" aria-label="DayName: Y.Y hours slept">
+                       <span class="bar-value" id="bar-value-day-id">Y.Y</span>
+                    </div>
+                    <span class="bar-label" aria-hidden="true">DayAbbr</span>
+                 </div>
+                  -->
+            </div>
+        </section>
+
+        <!-- Results -->
+        <section id="results" aria-live="polite"> <!-- Announce changes to screen readers -->
+            <h2>📊 Weekly Summary</h2>
+            <p>Total Actual Sleep: <strong id="total-actual">0.0 hrs</strong></p>
+            <p>Total Ideal Sleep: <strong id="total-ideal">0.0 hrs</strong></p>
+            <div id="sleep-difference">Calculating...</div>
+            <p id="motivational-message">Enter your sleep data to see your summary!</p>
+        </section>
+
+        <!-- Sleep Tip (Optional Extra) -->
+        <section id="sleep-tip-section" role="complementary">
+            <h3>💡 Sleep Hygiene Tip</h3>
+            <p id="sleep-tip">Loading tip...</p>
+        </section>
+
+    </main> <!-- Use main landmark -->
+
+    <script>
+        // Wrap in an IIFE to avoid polluting the global scope
+        (function() {
+            "use strict"; // Enforce stricter parsing and error handling
+
+            // --- DOM Elements ---
+            const idealSleepInput = document.getElementById('ideal-sleep');
+            const idealValueDisplay = document.getElementById('ideal-value-display'); // Updated ID
+            const dailyInputsContainer = document.getElementById('daily-inputs');
+            const chartContainer = document.getElementById('chart-container');
+            const totalActualDisplay = document.getElementById('total-actual');
+            const totalIdealDisplay = document.getElementById('total-ideal');
+            const sleepDifferenceDisplay = document.getElementById('sleep-difference');
+            const motivationalMessageDisplay = document.getElementById('motivational-message');
+            const themeToggleButton = document.getElementById('theme-toggle');
+            const sleepTipDisplay = document.getElementById('sleep-tip');
+            const htmlElement = document.documentElement;
+
+            // --- Constants ---
+            const DAYS = Object.freeze(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']); // Immutable
+            const DEFAULT_IDEAL_SLEEP = 8;
+            const MIN_SLEEP = 0;
+            const MAX_SLEEP = 12; // Consistent with slider range
+            const MOOD_OPTIONS = Object.freeze(['🤔', '😊', '😐', '😴', '😠']); // Immutable, 🤔 = Not set/Default
+            const SLEEP_TIPS = Object.freeze([ // Immutable
+                "Stick to a consistent sleep schedule, even on weekends.",
+                "Create a relaxing bedtime routine (e.g., reading, warm bath).",
+                "Make sure your bedroom is dark, quiet, and cool.",
+                "Avoid large meals, caffeine, and alcohol close to bedtime.",
+                "Get regular exercise, but not too close to bedtime.",
+                "Limit exposure to blue light (screens) an hour before bed.",
+                "If you can't sleep after 20 minutes, get up and do something relaxing.",
+                "Avoid long naps, especially late in the day.",
+                "Get some natural sunlight exposure during the day.",
+                "Consider mindfulness or meditation to calm your mind."
+            ]);
+            const LOCAL_STORAGE_KEY_DATA = 'sleepTrackerData_v1'; // Versioning key is good practice
+            const LOCAL_STORAGE_KEY_THEME = 'sleepTrackerTheme';
+
+            // --- State Variables ---
+            let idealSleep = DEFAULT_IDEAL_SLEEP;
+            let dailySleep = {}; // { Monday: 7.5, Tuesday: 6, ... }
+            let dailyMoods = {}; // { Monday: '😊', Tuesday: '😴', ... }
+
+            // --- Initialization ---
+            function initializeApp() {
+                generateUIElements();
+                setupEventListeners();
+                loadTheme(); // Load theme early for initial render
+                loadData(); // Load data, potentially overriding defaults
+                showRandomTip();
+                updateApp(); // Perform initial calculation and UI update
+            }
+
+            function generateUIElements() {
+                // Clear existing elements if regenerating (though typically done once)
+                dailyInputsContainer.innerHTML = '';
+                chartContainer.innerHTML = '';
+
+                DAYS.forEach(day => {
+                    const dayId = day.toLowerCase().replace(/\s+/g, '-'); // Sanitize for ID
+                    const defaultSleep = 0;
+                    const defaultMood = MOOD_OPTIONS[0];
+
+                    // Initialize state defaults
+                    dailySleep[day] = defaultSleep;
+                    dailyMoods[day] = defaultMood;
+
+                    // --- Input Fields ---
+                    const dayInputDiv = document.createElement('div');
+                    dayInputDiv.className = 'day-input';
+                    dayInputDiv.setAttribute('role', 'group'); // ARIA for grouping controls
+                    dayInputDiv.setAttribute('aria-labelledby', `label-${dayId}`);
+
+                    const label = document.createElement('label');
+                    label.id = `label-${dayId}`;
+                    label.setAttribute('for', `sleep-${dayId}`);
+                    label.textContent = day;
+
+                    const inputContainer = document.createElement('div');
+                    inputContainer.className = 'input-container';
+
+                    const slider = document.createElement('input');
+                    slider.type = 'range';
+                    slider.id = `sleep-${dayId}`;
+                    slider.name = `sleep-${dayId}`;
+                    slider.min = MIN_SLEEP.toString();
+                    slider.max = MAX_SLEEP.toString();
+                    slider.step = '0.5';
+                    slider.value = defaultSleep.toString();
+                    slider.dataset.day = day; // Use dataset for associating data
+                    slider.setAttribute('aria-labelledby', `label-${dayId}`); // Associate label for screen readers
+
+                    const valueSpan = document.createElement('span');
+                    valueSpan.className = 'slider-value';
+                    valueSpan.id = `value-${dayId}`;
+                    valueSpan.textContent = `${defaultSleep.toFixed(1)} hrs`;
+                    valueSpan.setAttribute('aria-live', 'polite'); // Announce changes politely
+
+                    const moodSelect = document.createElement('select');
+                    moodSelect.className = 'mood-selector';
+                    moodSelect.id = `mood-${dayId}`;
+                    moodSelect.dataset.day = day;
+                    moodSelect.title = `Select mood for ${day}`; // Tooltip
+                    moodSelect.setAttribute('aria-label', `Select mood for ${day}`); // ARIA label
+                    moodSelect.innerHTML = MOOD_OPTIONS.map(mood =>
+                        `<option value="${mood}" ${mood === defaultMood ? 'selected' : ''}>${mood}</option>`
+                    ).join('');
+
+                    inputContainer.appendChild(slider);
+                    inputContainer.appendChild(valueSpan);
+                    inputContainer.appendChild(moodSelect);
+                    dayInputDiv.appendChild(label);
+                    dayInputDiv.appendChild(inputContainer);
+                    dailyInputsContainer.appendChild(dayInputDiv);
+
+                    // --- Chart Placeholders ---
+                    const chartGroup = document.createElement('div');
+                    chartGroup.className = 'chart-bar-group';
+
+                    const chartBar = document.createElement('div');
+                    chartBar.className = 'chart-bar';
+                    chartBar.id = `bar-${dayId}`;
+                    chartBar.dataset.day = day;
+                    chartBar.style.height = '1%'; // Start with minimal height
+                    // ARIA label updated dynamically in updateChart
+
+                    const barValueSpan = document.createElement('span');
+                    barValueSpan.className = 'bar-value';
+                    barValueSpan.id = `bar-value-${dayId}`;
+                    barValueSpan.textContent = defaultSleep.toFixed(1);
+
+                    const barLabelSpan = document.createElement('span');
+                    barLabelSpan.className = 'bar-label';
+                    barLabelSpan.setAttribute('aria-hidden', 'true'); // Hide from screen reader, info is on the bar
+                    barLabelSpan.textContent = day.substring(0, 3);
+
+                    chartBar.appendChild(barValueSpan);
+                    chartGroup.appendChild(chartBar);
+                    chartGroup.appendChild(barLabelSpan);
+                    chartContainer.appendChild(chartGroup);
+                });
+            }
+
+            function setupEventListeners() {
+                // Ideal Sleep Input - Use 'change' for final value, 'input' for live update
+                idealSleepInput.addEventListener('input', handleIdealSleepInput);
+                idealSleepInput.addEventListener('change', handleIdealSleepChange); // Save on final change
+
+                // Daily Sleep Sliders & Mood Selectors (Event Delegation)
+                dailyInputsContainer.addEventListener('input', handleDailyInput);
+                dailyInputsContainer.addEventListener('change', handleDailyChange);
+
+                // Theme Toggle
+                themeToggleButton.addEventListener('click', toggleTheme);
+
+                // Listen for system theme changes (Optional but good UX)
+                const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+                 if (mediaQuery. C) { // Check if addEventListener is supported
+                    mediaQuery.addEventListener('change', handleSystemThemeChange);
+                } else if (mediaQuery.addListener) { // Deprecated fallback
+                     mediaQuery.addListener(handleSystemThemeChange);
+                }
+            }
+
+            // --- Event Handlers ---
+
+            function handleIdealSleepInput(event) {
+                const value = parseFloat(event.target.value);
+                // Update display live, but don't save/recalculate fully on every tiny change
+                if (!isNaN(value)) {
+                     idealValueDisplay.textContent = `${Math.max(1, Math.min(16, value)).toFixed(1)} hrs`; // Clamp value for display
+                }
+            }
+            function handleIdealSleepChange(event) {
+                // Validate and clamp the value on final change
+                let value = parseFloat(event.target.value);
+                if (isNaN(value) || value < 1) value = 1;
+                if (value > 16) value = 16;
+
+                idealSleep = value;
+                event.target.value = value; // Correct input value if it was out of bounds
+                idealValueDisplay.textContent = `${idealSleep.toFixed(1)} hrs`;
+                updateApp(); // Recalculate and save
+            }
+
+            function handleDailyInput(event) {
+                 // Live update for slider value display
+                 if (event.target.matches('input[type="range"]')) {
+                    const day = event.target.dataset.day;
+                    const value = parseFloat(event.target.value);
+                    if (day && !isNaN(value)) {
+                        const valueDisplay = document.getElementById(`value-${day.toLowerCase().replace(/\s+/g, '-')}`);
+                        if (valueDisplay) {
+                            valueDisplay.textContent = `${value.toFixed(1)} hrs`;
+                        }
+                    }
+                 }
+            }
+
+            function handleDailyChange(event) {
+                const target = event.target;
+                const day = target.dataset.day;
+
+                if (!day) return; // Should have a day associated
+
+                if (target.matches('input[type="range"]')) {
+                    // Validate slider value (though HTML range limits help)
+                    const value = Math.max(MIN_SLEEP, Math.min(MAX_SLEEP, parseFloat(target.value) || 0));
+                    target.value = value; // Ensure value is clamped
+                     dailySleep[day] = value;
+                    // Update display again on change just in case 'input' didn't fire
+                    const valueDisplay = document.getElementById(`value-${day.toLowerCase().replace(/\s+/g, '-')}`);
+                     if (valueDisplay) valueDisplay.textContent = `${value.toFixed(1)} hrs`;
+                     updateApp(); // Recalculate and save for slider change
+
+                } else if (target.matches('.mood-selector')) {
+                    // Security: Check if selected value is one of the allowed options
+                    const selectedMood = target.value;
+                    if (MOOD_OPTIONS.includes(selectedMood)) {
+                        dailyMoods[day] = selectedMood;
+                        saveData(); // Save immediately on mood change, no need for full updateApp
+                    } else {
+                        console.warn(`Invalid mood selected for ${day}: ${selectedMood}. Resetting.`);
+                        target.value = dailyMoods[day] || MOOD_OPTIONS[0]; // Revert to previous or default
+                    }
+                }
+            }
+
+             function handleSystemThemeChange(event) {
+                 // Only change if no theme is explicitly saved by the user
+                 if (!localStorage.getItem(LOCAL_STORAGE_KEY_THEME)) {
+                    const newColorScheme = event.matches ? 'dark' : 'light';
+                    applyTheme(newColorScheme, false); // Apply without saving preference yet
+                 }
+             }
+
+            // --- Core Logic ---
+
+            function calculateTotals() {
+                // Use Object.values and reduce for cleaner sum calculation
+                const totalActual = Object.values(dailySleep).reduce((sum, hours) => sum + (hours || 0), 0);
+                const totalIdeal = (idealSleep || 0) * DAYS.length;
+                const difference = totalActual - totalIdeal;
+                return { totalActual, totalIdeal, difference };
+            }
+
+            function updateResults({ totalActual, totalIdeal, difference }) {
+                totalActualDisplay.textContent = `${totalActual.toFixed(1)} hrs`;
+                totalIdealDisplay.textContent = `${totalIdeal.toFixed(1)} hrs`;
+
+                sleepDifferenceDisplay.classList.remove('positive', 'negative');
+                sleepDifferenceDisplay.textContent = ''; // Clear previous content
+
+                // Use Number.EPSILON for safer float comparison near zero
+                if (difference >= Number.EPSILON) {
+                    sleepDifferenceDisplay.textContent = `🎉 You're +${difference.toFixed(1)} hours ahead!`;
+                    sleepDifferenceDisplay.classList.add('positive');
+                } else if (difference <= -Number.EPSILON) {
+                    sleepDifferenceDisplay.textContent = `📉 You're ${difference.toFixed(1)} hours behind this week.`;
+                    sleepDifferenceDisplay.classList.add('negative');
+                } else {
+                     sleepDifferenceDisplay.textContent = `✅ Right on track this week!`; // Neutral state
+                }
+            }
+
+            function updateChart() {
+                // const maxSleepValue = MAX_SLEEP; // Use constant defined earlier
+
+                DAYS.forEach(day => {
+                    const dayId = day.toLowerCase().replace(/\s+/g, '-');
+                    const value = dailySleep[day] || 0;
+                    const bar = document.getElementById(`bar-${dayId}`);
+                    const barValue = document.getElementById(`bar-value-${dayId}`);
+
+                    // Defensive check: Ensure elements exist
+                    if (bar && barValue) {
+                         // Calculate height as a percentage of maxSleep
+                        const percentageHeight = (value / MAX_SLEEP) * 100;
+
+                        // Set the bar height (ensure minimum 1% for visibility if value > 0)
+                        bar.style.height = `${value > 0 ? Math.max(percentageHeight, 1) : 0}%`;
+
+                        // Update the text value shown above the bar (on hover)
+                        barValue.textContent = value.toFixed(1);
+
+                        // Update ARIA label for accessibility
+                        bar.setAttribute('aria-label', `${day}: ${value.toFixed(1)} hours slept`);
+
+                    } else {
+                        console.error(`Chart elements not found for day: ${day}`);
+                    }
+                });
+            }
+
+            function updateMotivationalMessage({ difference }) {
+                 let message = "";
+                 if (difference < -10) {
+                    message = "Significant sleep debt detected. Prioritize rest! 😴";
+                } else if (difference < -5) {
+                    message = "You're running low on sleep. Try to catch up soon. 🥱";
+                } else if (difference < -Number.EPSILON) { // Use Epsilon comparison
+                    message = "A little behind on sleep, but you can recover! 👍";
+                } else if (difference < 5) {
+                    message = "Looking good! You're meeting your sleep needs. 😊";
+                } else {
+                    message = "Well rested! Keep up the great sleep habits! 💪";
+                }
+                 motivationalMessageDisplay.textContent = message;
+            }
+
+            /**
+             * Updates all calculated fields, chart, and messages.
+             * Saves data to localStorage.
+             */
+            function updateApp() {
+                const totals = calculateTotals();
+                updateResults(totals);
+                updateChart();
+                updateMotivationalMessage(totals);
+                saveData(); // Save state whenever app updates based on input
+            }
+
+            // --- Local Storage ---
+
+            /**
+             * Security Note: localStorage is *not* secure storage.
+             * Data is stored unencrypted on the user's machine and can be accessed
+             * by any script running on the same origin, or manually by the user.
+             * Suitable for non-sensitive preferences like sleep data, but not passwords, PII, etc.
+             */
+            function saveData() {
+                try {
+                    const dataToSave = {
+                        idealSleep: idealSleep,
+                        dailySleep: dailySleep,
+                        dailyMoods: dailyMoods
+                    };
+                    localStorage.setItem(LOCAL_STORAGE_KEY_DATA, JSON.stringify(dataToSave));
+                } catch (error) {
+                    console.error("Error saving data to localStorage:", error);
+                    // Optionally inform the user data couldn't be saved
+                }
+            }
+
+            function loadData() {
+                const savedData = localStorage.getItem(LOCAL_STORAGE_KEY_DATA);
+                if (!savedData) {
+                    setUIDefaults(); // No saved data, ensure UI shows defaults
+                    return;
+                }
+
+                try {
+                    const parsedData = JSON.parse(savedData);
+
+                    // --- Load Ideal Sleep ---
+                    // Validate loaded value before assigning
+                    let loadedIdeal = parseFloat(parsedData.idealSleep);
+                    if (isNaN(loadedIdeal) || loadedIdeal < 1 || loadedIdeal > 16) {
+                        idealSleep = DEFAULT_IDEAL_SLEEP; // Fallback to default
+                        console.warn("Invalid ideal sleep value in localStorage, using default.");
+                    } else {
+                        idealSleep = loadedIdeal;
+                    }
+                    // Update UI element
+                    idealSleepInput.value = idealSleep;
+                    idealValueDisplay.textContent = `${idealSleep.toFixed(1)} hrs`;
+
+                    // --- Load Daily Sleep & Moods ---
+                    let dataNeedsUpdate = false;
+                    DAYS.forEach(day => {
+                        const dayId = day.toLowerCase().replace(/\s+/g, '-');
+
+                        // Load Sleep
+                        const savedSleep = parseFloat(parsedData.dailySleep?.[day]);
+                        let currentSleep = 0; // Default for the loop iteration
+                        if (!isNaN(savedSleep) && savedSleep >= MIN_SLEEP && savedSleep <= MAX_SLEEP) {
+                            currentSleep = savedSleep;
+                        } else {
+                            if (parsedData.dailySleep?.[day] !== undefined) { // Only warn if data existed but was invalid
+                                console.warn(`Invalid sleep value for ${day} in localStorage, using 0.`);
+                                dataNeedsUpdate = true; // Mark to re-save cleaned data
+                            }
+                        }
+                        dailySleep[day] = currentSleep;
+                        // Update UI elements
+                        const slider = document.getElementById(`sleep-${dayId}`);
+                        const valueDisplay = document.getElementById(`value-${dayId}`);
+                        if (slider) slider.value = currentSleep;
+                        if (valueDisplay) valueDisplay.textContent = `${currentSleep.toFixed(1)} hrs`;
+
+
+                        // Load Mood
+                        const savedMood = parsedData.dailyMoods?.[day];
+                        let currentMood = MOOD_OPTIONS[0]; // Default for the loop iteration
+                        if (savedMood && MOOD_OPTIONS.includes(savedMood)) {
+                           currentMood = savedMood;
+                        } else {
+                             if (parsedData.dailyMoods?.[day] !== undefined) { // Only warn if data existed but was invalid
+                                console.warn(`Invalid mood value for ${day} in localStorage, using default.`);
+                                dataNeedsUpdate = true; // Mark to re-save cleaned data
+                             }
+                        }
+                        dailyMoods[day] = currentMood;
+                        // Update UI element
+                         const moodSelector = document.getElementById(`mood-${dayId}`);
+                         if (moodSelector) moodSelector.value = currentMood;
+
+                    });
+
+                    // If any data was invalid and cleaned, re-save the cleaned state
+                    if (dataNeedsUpdate) {
+                        saveData();
+                    }
+
+
+                } catch (error) {
+                    console.error("Error parsing saved data from localStorage:", error);
+                    // Use defaults if parsing fails
+                    setUIDefaults();
+                }
+                // Note: updateApp() is called after loadData in initializeApp()
+            }
+
+            /** Sets UI elements to their default values (doesn't affect internal state directly) */
+            function setUIDefaults() {
+                idealSleepInput.value = DEFAULT_IDEAL_SLEEP;
+                idealValueDisplay.textContent = `${DEFAULT_IDEAL_SLEEP.toFixed(1)} hrs`;
+                DAYS.forEach(day => {
+                     const dayId = day.toLowerCase().replace(/\s+/g, '-');
+                     const slider = document.getElementById(`sleep-${dayId}`);
+                     const valueDisplay = document.getElementById(`value-${dayId}`);
+                     const moodSelector = document.getElementById(`mood-${dayId}`);
+
+                     if (slider) slider.value = 0;
+                     if (valueDisplay) valueDisplay.textContent = `0.0 hrs`;
+                     if (moodSelector) moodSelector.value = MOOD_OPTIONS[0];
+                });
+                 // Set internal state to defaults too if resetting UI
+                 idealSleep = DEFAULT_IDEAL_SLEEP;
+                 DAYS.forEach(day => {
+                     dailySleep[day] = 0;
+                     dailyMoods[day] = MOOD_OPTIONS[0];
+                 });
+            }
+
+
+            // --- Theme Handling ---
+            function applyTheme(theme, savePreference = true) {
+                if (theme !== 'light' && theme !== 'dark') {
+                    theme = 'light'; // Default fallback
+                }
+                htmlElement.setAttribute('data-theme', theme);
+                themeToggleButton.textContent = theme === 'dark' ? '☀️' : '🌙';
+                themeToggleButton.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
+
+                if (savePreference) {
+                     try {
+                        localStorage.setItem(LOCAL_STORAGE_KEY_THEME, theme);
+                     } catch (error) {
+                         console.error("Error saving theme preference:", error);
+                     }
+                }
+                 // Update mood selector arrow color (example - might need more robust approach)
+                updateSelectArrowColor(theme);
+            }
+
+            function toggleTheme() {
+                const currentTheme = htmlElement.getAttribute('data-theme') || 'light';
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                applyTheme(newTheme, true); // Apply and save preference
+            }
+
+            function loadTheme() {
+                let theme = 'light'; // Default
+                try {
+                    const savedTheme = localStorage.getItem(LOCAL_STORAGE_KEY_THEME);
+                    if (savedTheme === 'light' || savedTheme === 'dark') {
+                        theme = savedTheme;
+                    } else {
+                        // No valid saved theme, check system preference
+                        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                        theme = prefersDark ? 'dark' : 'light';
+                        // Don't save the system preference automatically, let the user toggle explicitly
+                        applyTheme(theme, false);
+                        return; // Exit early as theme is applied
+                    }
+                } catch (error) {
+                    console.error("Error loading theme preference:", error);
+                    // Fallback to system preference if localStorage fails
+                     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    theme = prefersDark ? 'dark' : 'light';
+                }
+                 applyTheme(theme, false); // Apply loaded/fallback theme without re-saving
+            }
+
+             // Helper to update custom select arrow color (simple example)
+             function updateSelectArrowColor(theme) {
+                const textColorVar = getComputedStyle(htmlElement).getPropertyValue('--text-color').trim();
+                const encodedColor = encodeURIComponent(textColorVar.startsWith('#') ? textColorVar.substring(1) : '212529'); // Fallback color if needed
+                const newArrowUrl = `url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23${encodedColor}%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')`;
+
+                document.querySelectorAll('.mood-selector').forEach(select => {
+                    select.style.backgroundImage = newArrowUrl;
+                });
+            }
+
+
+            // --- Sleep Tip ---
+            function showRandomTip() {
+                 if (SLEEP_TIPS.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * SLEEP_TIPS.length);
+                    sleepTipDisplay.textContent = SLEEP_TIPS[randomIndex];
+                 } else {
+                     sleepTipDisplay.textContent = "Remember to prioritize consistent sleep!"; // Fallback
+                 }
+            }
+
+            // --- Run Application ---
+            // Ensure DOM is ready before initializing
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeApp);
+            } else {
+                initializeApp(); // DOMContentLoaded has already fired
+            }
+
+        })(); // End IIFE
+    </script>
+
+</body>
+</html>
